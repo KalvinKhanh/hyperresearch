@@ -8,7 +8,7 @@ description: >
   This step ENDS when all 3 drafts are written and validated. Step 11
   (synthesizer) handles the synthesis-write that produces the final report.
   For light tier: writes a single draft directly to final_report.md and
-  skips ahead to step 15 (polish). Invoked via Skill tool.
+  skips ahead to step 15 (polish). Invoked from the entry skill (hyperresearch) by reading its SKILL.md.
 ---
 
 # Step 10 — Triple-draft ensemble (curated lists, parallel writers)
@@ -73,7 +73,7 @@ If `pipeline_tier == "light"`: SKIP step 10.1 — 10.3 below and follow this sec
 
 4. **Hygiene.** No YAML frontmatter on the final report. No pipeline vocabulary in prose ("hyperresearch", "evidence digest", "comparisons.md", "committed reading", etc.). When `citation_style == "wikilink"`, `[[<source-note-id>]]` markers ARE the citation system and must be preserved — only strip wikilinks that point at workspace artifacts (interim-*, scaffold, comparisons). Step 15 (polish) is a backstop, not a license to leak.
 
-5. **Exit and route.** Once `research/notes/final_report_<vault_tag>.md` is written, return to the entry skill and invoke `Skill(skill: "hyperresearch-15-polish")`. Light tier skips steps 11–14 entirely.
+5. **Exit and route.** Once `research/notes/final_report_<vault_tag>.md` is written, return to the entry skill and read `.agents/skills/hyperresearch-15-polish/SKILL.md` (or `Skill(skill: "hyperresearch-15-polish")` on Claude Code). Light tier skips steps 11–14 entirely.
 
 ---
 
@@ -222,5 +222,5 @@ When all 3 sub-orchestrators return:
 
 Return to the entry skill (`hyperresearch`). Tier-based routing:
 
-- **light tier:** You already wrote `research/notes/final_report_<vault_tag>.md` directly. Skip steps 11-14 (no synthesis, no critics, no patcher) and invoke `Skill(skill: "hyperresearch-15-polish")`.
-- **full tier:** Invoke `Skill(skill: "hyperresearch-11-synthesize")`.
+- **light tier:** You already wrote `research/notes/final_report_<vault_tag>.md` directly. Skip steps 11-14 (no synthesis, no critics, no patcher) and read `.agents/skills/hyperresearch-15-polish/SKILL.md` (or `Skill(skill: "hyperresearch-15-polish")` on Claude Code).
+- **full tier:** Read and follow `.agents/skills/hyperresearch-11-synthesize/SKILL.md` (or `Skill(skill: "hyperresearch-11-synthesize")` on Claude Code).

@@ -5,8 +5,7 @@ description: >
   (breadth / depth / adversarial lenses) followed by parallel fetcher waves.
   Achieves comprehensive topical coverage with << p.source_target|dash >> curated sources for
   full tier. Includes coverage check, evidence redundancy audit,
-  and source count gating. Invoked via Skill tool from the entry skill
-  after step 1 completes.
+  and source count gating. Invoked from the entry skill (hyperresearch) by reading its SKILL.md after step 1 completes.
 ---
 
 # Step 2 — Width sweep
@@ -340,5 +339,5 @@ If you fall short after two waves, proceed anyway but ensure `coverage-gaps.md` 
 
 Return to the entry skill (`hyperresearch`). Tier-based routing:
 
-- **light tier:** Skip directly to step 10 — invoke `Skill(skill: "hyperresearch-10-triple-draft")` (light tier writes a single draft, not the ensemble)
-- **full tier:** Invoke `Skill(skill: "hyperresearch-3-contradiction-graph")`
+- **light tier:** Skip directly to step 10 — read and follow `.agents/skills/hyperresearch-10-triple-draft/SKILL.md` (or `Skill(skill: "hyperresearch-10-triple-draft")` on Claude Code; light tier writes a single draft, not the ensemble)
+- **full tier:** Read and follow `.agents/skills/hyperresearch-3-contradiction-graph/SKILL.md` (or `Skill(skill: "hyperresearch-3-contradiction-graph")` on Claude Code)

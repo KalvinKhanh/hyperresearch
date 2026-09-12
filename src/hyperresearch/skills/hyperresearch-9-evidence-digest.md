@@ -5,8 +5,7 @@ description: >
   claims and verbatim quotes from the claims JSONs into
   research/runs/<vault_tag>/temp/evidence-digest.md — a single high-fidelity evidence
   index the draft sub-orchestrators read as primary evidence (higher
-  fidelity than fetcher summaries). Invoked via Skill tool from the
-  entry skill (full tier).
+  fidelity than fetcher summaries). Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier).
 ---
 
 # Step 9 — Evidence digest
@@ -77,7 +76,8 @@ If fewer claims exist in total, include all of them.
 Return to the entry skill (`hyperresearch`). Invoke step 10:
 
 ```
-Skill(skill: "hyperresearch-10-triple-draft")
+Read and follow `.agents/skills/hyperresearch-10-triple-draft/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-10-triple-draft")`)
 ```
 
 Step 10 is the most important step in the pipeline. Re-read the entry skill before invoking if needed — the triple-draft ensemble must spawn 3 draft-orchestrators for `full` tier.

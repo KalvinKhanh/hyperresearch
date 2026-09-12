@@ -4,8 +4,7 @@ description: >
   Step 12 of the hyperresearch V8 pipeline. Spawns 4 adversarial critics
   in parallel against the synthesized final report from step 11. Each
   critic produces an independent findings JSON that the patcher (step 14)
-  consumes. Critics never modify the draft directly. Invoked via Skill
-  tool from the entry skill (full tier only).
+  consumes. Critics never modify the draft directly. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier only).
 ---
 
 # Step 12 — Adversarial critique (parallel critics)
@@ -75,5 +74,6 @@ Read these inputs:
 Return to the entry skill (`hyperresearch`). Invoke step 13:
 
 ```
-Skill(skill: "hyperresearch-13-gap-fetch")
+Read and follow `.agents/skills/hyperresearch-13-gap-fetch/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-13-gap-fetch")`)
 ```

@@ -3564,6 +3564,53 @@ if (vault) {{
 """
 
 
+ANTIGRAVITY_HOOK_SCRIPT_TEMPLATE = """\
+#!/usr/bin/env node
+/**
+ * hyperresearch PreToolUse hook for Google Antigravity.
+ * Reminds agent to check research base first before raw web fetch/search.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const HPR = '{hpr_path}';
+
+function findVault() {{
+    let dir = process.cwd();
+    while (true) {{
+        if (fs.existsSync(path.join(dir, '.hyperresearch'))) return dir;
+        const parent = path.dirname(dir);
+        if (parent === dir) return null;
+        dir = parent;
+    }}
+}}
+
+const vault = findVault();
+let reasonMsg = '';
+if (vault) {{
+    reasonMsg = [
+        'HYPERRESEARCH: A research knowledge base exists in this project.',
+        '',
+        'BEFORE searching the web, check existing research:',
+        '  ' + HPR + ' search "<your query>" -j',
+        '',
+        'Do not use raw web search or read_url_content if a local note exists.',
+        'To fetch new sources with full headless rendering:',
+        '  ' + HPR + ' fetch "<url>" --tag <topic> -j'
+    ].join('\\n');
+}}
+
+let input = '';
+process.stdin.on('data', chunk => {{ input += chunk; }});
+process.stdin.on('end', () => {{
+    process.stdout.write(JSON.stringify({{
+        decision: 'allow',
+        reason: reasonMsg
+    }}) + '\\n');
+}});
+"""
+
+
 def install_hooks(
     vault_root: Path,
     hpr_path: str = "hyperresearch",
@@ -3756,6 +3803,58 @@ def _install_claude_hook(vault_root: Path, hpr_path: str) -> str | None:
 
     settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
     return "Claude Code: .claude/settings.json (PreToolUse hook)"
+
+
+def _write_antigravity_hook_script(vault_root: Path, hpr_path: str) -> Path:
+    """Write the Antigravity hook JS script to .hyperresearch/antigravity_hook.js."""
+    hook_dir = vault_root / ".hyperresearch"
+    hook_dir.mkdir(parents=True, exist_ok=True)
+    hook_path = hook_dir / "antigravity_hook.js"
+    js_path = hpr_path.replace("\\", "\\\\")
+    hook_path.write_text(ANTIGRAVITY_HOOK_SCRIPT_TEMPLATE.format(hpr_path=js_path), encoding="utf-8")
+    return hook_path
+
+
+def _install_antigravity_hook(vault_root: Path, hpr_path: str) -> str | None:
+    """Install PreToolUse hook into .agents/hooks.json for Antigravity."""
+    hook_path = _write_antigravity_hook_script(vault_root, hpr_path)
+
+    agents_dir = vault_root / ".agents"
+    agents_dir.mkdir(exist_ok=True)
+    hooks_path = agents_dir / "hooks.json"
+
+    hooks_data: dict = {}
+    if hooks_path.exists():
+        try:
+            hooks_data = json.loads(hooks_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    existing = hooks_data.get("hyperresearch-vault-checker")
+    if isinstance(existing, dict):
+        for entry in existing.get("PreToolUse", []):
+            if isinstance(entry, dict):
+                for h in entry.get("hooks", []):
+                    if "antigravity_hook.js" in h.get("command", ""):
+                        return None
+
+    hooks_data["hyperresearch-vault-checker"] = {
+        "PreToolUse": [
+            {
+                "matcher": "search_web|read_url_content|browser_.*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": f'node "{hook_path.as_posix()}"',
+                        "timeout": 15,
+                    }
+                ],
+            }
+        ]
+    }
+
+    hooks_path.write_text(json.dumps(hooks_data, indent=2) + "\n", encoding="utf-8")
+    return "Google Antigravity: .agents/hooks.json (PreToolUse hook)"
 
 
 def _write_agent_file(
@@ -4229,3 +4328,116 @@ def _install_hyperresearch_step_skills(vault_root: Path) -> str | None:
     if pruned:
         parts.append(f"pruned: {', '.join(pruned)}")
     return f"Claude Code: .claude/skills/hyperresearch-N-*/SKILL.md ({'; '.join(parts)})"
+
+
+def _install_antigravity_skill(dest_root: Path, is_global: bool = False) -> str | None:
+    """Install the entry skill at .agents/skills/hyperresearch/SKILL.md (or global config)."""
+    content = _read_skill_source("hyperresearch.md")
+    if content is None:
+        return None
+    content = _render_installed(content)
+
+    if is_global:
+        skill_dir = dest_root / "skills" / "hyperresearch"
+    else:
+        skill_dir = dest_root / ".agents" / "skills" / "hyperresearch"
+
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = skill_dir / "SKILL.md"
+    if dest_path.exists() and dest_path.read_text(encoding="utf-8") == content:
+        return None
+    dest_path.write_text(content, encoding="utf-8")
+    loc = str(dest_path.relative_to(dest_root)) if not is_global else str(dest_path)
+    return f"Google Antigravity: {loc} (/hyperresearch trigger)"
+
+
+def _install_antigravity_step_skills(vault_root: Path) -> str | None:
+    """Install the 18 V8 step skills to .agents/skills/hyperresearch-N-*/SKILL.md."""
+    skills_root = vault_root / ".agents" / "skills"
+    skills_root.mkdir(parents=True, exist_ok=True)
+
+    expected = set(_HYPERRESEARCH_STEP_SKILLS)
+    installed: list[str] = []
+    pruned: list[str] = []
+
+    for skill_name in _HYPERRESEARCH_STEP_SKILLS:
+        src_name = f"{skill_name}.md"
+        content = _read_skill_source(src_name)
+        if content is None:
+            continue
+        content = _render_installed(content)
+
+        skill_dir = skills_root / skill_name
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = skill_dir / "SKILL.md"
+
+        if dest_path.exists() and dest_path.read_text(encoding="utf-8") == content:
+            continue
+
+        dest_path.write_text(content, encoding="utf-8")
+        installed.append(skill_name)
+
+    # Prune stale skill dirs
+    for child in skills_root.iterdir():
+        if not child.is_dir():
+            continue
+        is_stale_hpr = child.name.startswith("hyperresearch-") and child.name not in expected
+        is_legacy_layercake = child.name.startswith("layercake-")
+        if not (is_stale_hpr or is_legacy_layercake):
+            continue
+        if not _is_our_skill_dir(child):
+            continue
+        _remove_skill_dir(child)
+        pruned.append(child.name)
+
+    if not installed and not pruned:
+        return None
+
+    parts: list[str] = []
+    if installed:
+        parts.append(f"{len(installed)} step skills: {', '.join(installed)}")
+    if pruned:
+        parts.append(f"pruned: {', '.join(pruned)}")
+    return f"Google Antigravity: .agents/skills/hyperresearch-N-*/SKILL.md ({'; '.join(parts)})"
+
+
+def install_antigravity_hooks(
+    vault_root: Path,
+    hpr_path: str = "hyperresearch",
+    profile: str = "full",
+) -> list[str]:
+    """Install Google Antigravity hook + skills. Returns list of actions taken."""
+    config_path = vault_root / ".hyperresearch" / "config.toml"
+    _set_render_state(profile, config_path if config_path.exists() else None)
+    actions = []
+
+    for installer in (
+        lambda: _install_antigravity_hook(vault_root, hpr_path),
+        lambda: _install_antigravity_skill(vault_root),
+        lambda: _install_antigravity_step_skills(vault_root),
+    ):
+        result = installer()
+        if result:
+            actions.append(result)
+
+    return actions
+
+
+def install_global_antigravity_hooks(
+    home: Path | None = None,
+    hpr_path: str = "hyperresearch",
+    profile: str = "full",
+) -> list[str]:
+    """Install Google Antigravity entry skill globally under ~/.gemini/config/skills/."""
+    if home is None:
+        home = Path.home()
+
+    config_root = home / ".gemini" / "config"
+    _set_render_state(profile, None)
+    actions = []
+
+    result = _install_antigravity_skill(config_root, is_global=True)
+    if result:
+        actions.append(result)
+
+    return actions

@@ -5,8 +5,7 @@ description: >
   subagents in parallel (one per scored locus), each producing one
   interim note with a Committed Position section. Investigators read
   full source bodies for their locus and may fetch additional sources
-  within their source_budget. Invoked via Skill tool from the entry
-  skill (full tier only).
+  within their source_budget. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier only).
 ---
 
 # Step 5 — Depth investigation (parallel, K = len(loci))
@@ -107,5 +106,6 @@ If >50% of investigators failed: stop and escalate.
 Return to the entry skill (`hyperresearch`). Invoke step 6:
 
 ```
-Skill(skill: "hyperresearch-6-cross-locus-reconcile")
+Read and follow `.agents/skills/hyperresearch-6-cross-locus-reconcile/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-6-cross-locus-reconcile")`)
 ```

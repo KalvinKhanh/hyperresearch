@@ -35,14 +35,26 @@
 
 ```bash
 cd your-project
-pip install hyperresearch && hyperresearch install
+pip install -e . # or pip install hyperresearch
+hyperresearch install
 ```
 
-Then `/hyperresearch <anything>` in Claude Code.
+### Usage with Google Antigravity & Claude Code
+
+Hyperresearch supports both **Google Antigravity** and **Claude Code**:
+
+- **Google Antigravity**: Run `hyperresearch install --harness antigravity` (or default `hyperresearch install`). This populates `.agents/skills/` (router skill + 18 step skills), `.agents/hooks.json` (PreToolUse hook for vault checking), and `AGENTS.md` / `GEMINI.md`.
+  - In Antigravity: type `/hyperresearch <query>` or instruct the agent: `Execute .agents/skills/hyperresearch/SKILL.md with query: "<query>"`.
+- **Claude Code**: Run `hyperresearch install --harness claude`. Populates `.claude/skills/`, `.claude/agents/`, and `CLAUDE.md`.
+  - In Claude Code: run `/hyperresearch <query>`.
+
+> [!WARNING]
+> **Ràng buộc an toàn trên Google Antigravity**:
+> Trên Antigravity, ràng buộc 'patch not regenerate' KHÔNG được ép buộc ở tầng công cụ như trên Claude Code — nó chỉ còn là chỉ dẫn trong prompt, có thể bị agent vi phạm nếu model không tuân thủ tốt. Bản fork này đã bổ sung các soft constraints nghiêm ngặt trong prompt của subagent `patcher` và `polish-auditor`, cùng chỉ dẫn kiểm tra sai lệch cấu trúc để bảo toàn báo cáo gốc sau bước tổng hợp.
 
 > Python 3.11–3.13. (3.14 not yet supported. Use `pyenv install 3.13`, `uv venv -p 3.13`, or `py -3.13 -m venv .venv`.)
 >
-> Power users: `hyperresearch install --global` makes `/hyperresearch` reachable from every Claude Code session anywhere, at the cost of ~15 lines in every session's system reminder. Per-project install (above) keeps unrelated CC sessions clean.
+> Power users: `hyperresearch install --global` makes `/hyperresearch` reachable machine-wide (under `~/.gemini/config/` for Antigravity, `~/.claude/` for Claude Code). Per-project install keeps unrelated sessions clean.
 
 ---
 

@@ -5,8 +5,7 @@ description: >
   subagent (TOOL-LOCKED to Read + Edit) to apply critic findings as
   surgical Edit hunks against the synthesized final report. Zero
   regeneration. Pre-stubs the patch log because Edit cannot create files.
-  Handles orchestrator-escalated structural restructures inline. Invoked
-  via Skill tool from the entry skill (full tier).
+  Handles orchestrator-escalated structural restructures inline. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier).
 ---
 
 # Step 14 — Patch pass
@@ -49,6 +48,7 @@ Then proceed to step 15. Most runs should not use this gate.
 
 ## Step 14.1 — Pre-create the patch log stub
 
+<!-- TODO-ANTIGRAVITY: Trên Antigravity, ràng buộc tool-lock (chỉ Read + Edit) là ràng buộc mềm trong prompt. Agent TUYỆT ĐỐI KHÔNG dùng write_to_file để viết lại toàn bộ báo cáo; chỉ dùng các công cụ thay thế nội dung cục bộ (replace_file_content / multi_replace_file_content). -->
 The patcher is tool-locked to `[Read, Edit]` — it cannot Write. Edit can only modify files that already exist. So you (the orchestrator) MUST write the canonical stub first, which the patcher will then Edit to populate:
 
 ```bash
@@ -154,5 +154,6 @@ For each entry:
 Return to the entry skill (`hyperresearch`). Invoke step 14.5 (cite-check):
 
 ```
-Skill(skill: "hyperresearch-14-5-cite-check")
+Read and follow `.agents/skills/hyperresearch-14-5-cite-check/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-14-5-cite-check")`)
 ```

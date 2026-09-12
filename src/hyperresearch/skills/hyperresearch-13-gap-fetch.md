@@ -5,8 +5,7 @@ description: >
   vault gaps that critics identified. If a critic says "the draft ignored
   topic X" and the vault has zero sources on X, the patcher has nothing
   to cite. This step fetches the missing sources BEFORE patching so the
-  patcher has ammunition. Capped at 5 gaps. Invoked via Skill tool from
-  the entry skill (full tier).
+  patcher has ammunition. Capped at 5 gaps. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier).
 ---
 
 # Step 13 — Post-critic gap fetch (conditional)
@@ -90,5 +89,6 @@ Read these inputs:
 Return to the entry skill (`hyperresearch`). Invoke step 14:
 
 ```
-Skill(skill: "hyperresearch-14-patcher")
+Read and follow `.agents/skills/hyperresearch-14-patcher/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-14-patcher")`)
 ```

@@ -5,8 +5,7 @@ description: >
   subagents that read the width corpus and identify 1-<< p.loci_max >> specific
   questions where depth investigation will pay off. Deduplicates and
   scores each locus on importance/uncertainty/disagreement/decision_impact,
-  then allocates source budgets dynamically. Invoked via Skill tool from
-  the entry skill (full tier only).
+  then allocates source budgets dynamically. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier only).
 ---
 
 # Step 4 — Loci analysis (parallel, << p.loci_analysts >> analysts)
@@ -130,5 +129,6 @@ Survey the corpus: `$HPR note list --tag <vault_tag> --all -j` to confirm width 
 Return to the entry skill (`hyperresearch`). Invoke step 5:
 
 ```
-Skill(skill: "hyperresearch-5-depth-investigation")
+Read and follow `.agents/skills/hyperresearch-5-depth-investigation/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-5-depth-investigation")`)
 ```

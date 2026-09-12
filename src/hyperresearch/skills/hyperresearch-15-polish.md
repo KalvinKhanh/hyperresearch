@@ -6,7 +6,7 @@ description: >
   the final hygiene + readability pass. Strips pipeline-reference leaks,
   YAML frontmatter, scaffold sections, filler phrases, run-on sentences.
   Escalates structural mismatches rather than fabricating content.
-  Invoked via Skill tool from the entry skill. Followed by step 16
+  Invoked from the entry skill (hyperresearch) by reading its SKILL.md. Followed by step 16
   (readability audit) which is the actual final step before ship.
 ---
 
@@ -28,6 +28,7 @@ Read these inputs:
 
 ## Step 15.1 — Pre-create the polish log stub
 
+<!-- TODO-ANTIGRAVITY: Tương tự step 14, polish auditor trên Antigravity chịu ràng buộc mềm: chỉ dùng view_file và replace_file_content, không dùng write_to_file để viết lại báo cáo. -->
 The polish auditor has `[Read, Edit]` only and cannot create a new file (same tool-lock rule as the step 14 patcher). Stub it first:
 
 ```bash
@@ -160,7 +161,8 @@ The final report lives at `research/notes/final_report_<vault_tag>.md`. The wrap
 Return to the entry skill (`hyperresearch`). Invoke step 16:
 
 ```
-Skill(skill: "hyperresearch-16-readability-audit")
+Read and follow `.agents/skills/hyperresearch-16-readability-audit/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-16-readability-audit")`)
 ```
 
 Step 16 is the final step — readability audit + selective apply. Runs for ALL tiers.

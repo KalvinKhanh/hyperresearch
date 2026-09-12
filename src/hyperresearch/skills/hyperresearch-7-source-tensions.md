@@ -6,8 +6,7 @@ description: >
   including orphan tensions that didn't surface as loci. Reads full source
   bodies of top << p.tension_full_reads|hyphen >> sources (not summaries) to find tensions that hide
   in nuance. The Source Tensions section in step 10's draft is the single
-  highest-leverage move for insight scores. Invoked via Skill tool from
-  the entry skill (full tier only).
+  highest-leverage move for insight scores. Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier only).
 ---
 
 # Step 7 — Source tension extraction
@@ -97,5 +96,6 @@ This artifact feeds directly into step 10's mandatory Source Tensions section. E
 Return to the entry skill (`hyperresearch`). Invoke step 8:
 
 ```
-Skill(skill: "hyperresearch-8-corpus-critic")
+Read and follow `.agents/skills/hyperresearch-8-corpus-critic/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-8-corpus-critic")`)
 ```

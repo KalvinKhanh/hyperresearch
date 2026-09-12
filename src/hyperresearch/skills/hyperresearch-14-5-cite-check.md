@@ -7,7 +7,7 @@ description: >
   table, the cite-checker agent judges the sampled remainder, and a second
   small patcher pass applies the findings. Runs AFTER step 14 (the patcher
   moved text and citations; audit what will actually ship) and BEFORE step
-  15 (polish sees the corrected text). Invoked via Skill tool.
+  15 (polish sees the corrected text). Invoked from the entry skill (hyperresearch) by reading its SKILL.md.
 ---
 
 # Step 14.5 — Cite-check (citation-sentence binding verification)
@@ -94,4 +94,4 @@ Fix repertoire (in the findings' `suggested_fix`): swap to `correct_note_id`, so
 
 ## Next step
 
-Return to the entry skill and invoke `Skill(skill: "hyperresearch-15-polish")`.
+Return to the entry skill and read `.agents/skills/hyperresearch-15-polish/SKILL.md` (or `Skill(skill: "hyperresearch-15-polish")` on Claude Code).

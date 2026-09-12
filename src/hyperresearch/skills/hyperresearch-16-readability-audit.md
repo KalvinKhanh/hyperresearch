@@ -9,7 +9,7 @@ description: >
   reads the recommendations and SELECTIVELY applies them via direct
   Edit calls (the recommender does NOT modify the report itself).
   Logs orchestrator decisions to a separate file. Runs for ALL tiers.
-  Invoked via Skill tool from the entry skill.
+  Invoked from the entry skill (hyperresearch) by reading its SKILL.md.
 ---
 
 # Step 16 — Readability audit & selective apply (FINAL STEP)

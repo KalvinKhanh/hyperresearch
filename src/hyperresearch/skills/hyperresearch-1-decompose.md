@@ -5,8 +5,7 @@ description: >
   query into atomic items, classifies pipeline_tier and response_format,
   and produces the coverage matrix that downstream steps depend on. The
   required_section_headings field this step produces is the single
-  highest-leverage input for instruction-following scores. Invoked via
-  Skill tool from the entry skill (hyperresearch).
+  highest-leverage input for instruction-following scores. Invoked from the entry skill (hyperresearch) by reading its SKILL.md.
 ---
 
 # Step 1 — Prompt decomposition
@@ -205,7 +204,8 @@ Read both before starting. The vault_tag is in the scaffold's "Run config" secti
 Return to the entry skill (`hyperresearch`). Read `research/runs/<vault_tag>/prompt-decomposition.json` to learn the tier, then invoke step 2:
 
 ```
-Skill(skill: "hyperresearch-2-width-sweep")
+Read and follow `.agents/skills/hyperresearch-2-width-sweep/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-2-width-sweep")`)
 ```
 
 Step 2 runs for ALL tiers.

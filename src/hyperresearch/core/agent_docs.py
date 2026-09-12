@@ -229,30 +229,41 @@ def _resolve_executable() -> str:
     return "hyperresearch"
 
 
-def inject_agent_docs(vault_root: Path) -> list[str]:
-    """Inject hyperresearch docs into CLAUDE.md at the vault root.
+def inject_agent_docs(vault_root: Path, harness: str = "both") -> list[str]:
+    """Inject hyperresearch docs into agent instruction files at the vault root.
 
-    Always writes/updates CLAUDE.md. Does NOT touch AGENTS.md, GEMINI.md,
-    or .github/copilot-instructions.md — hyperresearch is a Claude Code
-    harness now, not a multi-platform tool. Pre-existing non-Claude doc
-    files are left untouched (we don't delete user content), but no new
-    ones are created.
+    When harness is 'claude' or 'both', writes/updates CLAUDE.md.
+    When harness is 'antigravity' or 'both', writes/updates AGENTS.md and GEMINI.md.
     """
     hpr_path = _resolve_executable()
     # Use forward slashes — bash on Windows eats backslashes
     hpr_path = hpr_path.replace("\\", "/")
-    # No date interpolation here: a `Today is YYYY-MM-DD` line in the
-    # cached prefix would bust Claude Code's prompt cache once per day.
-    blurb = HYPERRESEARCH_BLURB.format(
-        marker=HYPERRESEARCH_SECTION_MARKER,
-        end_marker=HYPERRESEARCH_SECTION_END,
-        hpr=hpr_path,
-    )
 
     modified: list[str] = []
-    result = _inject_into_file(vault_root / "CLAUDE.md", blurb, "CLAUDE.md")
-    if result:
-        modified.append(result)
+
+    # Claude Code doc
+    if harness in ("claude", "both"):
+        claude_blurb = HYPERRESEARCH_BLURB.format(
+            marker=HYPERRESEARCH_SECTION_MARKER,
+            end_marker=HYPERRESEARCH_SECTION_END,
+            hpr=hpr_path,
+        )
+        res = _inject_into_file(vault_root / "CLAUDE.md", claude_blurb, "CLAUDE.md")
+        if res:
+            modified.append(res)
+
+    # Antigravity docs (AGENTS.md and GEMINI.md)
+    if harness in ("antigravity", "both"):
+        agy_blurb = HYPERRESEARCH_BLURB.format(
+            marker=HYPERRESEARCH_SECTION_MARKER,
+            end_marker=HYPERRESEARCH_SECTION_END,
+            hpr=hpr_path,
+        ).replace(".claude/skills/", ".agents/skills/")
+        for doc_name in ("AGENTS.md", "GEMINI.md"):
+            res = _inject_into_file(vault_root / doc_name, agy_blurb, doc_name)
+            if res:
+                modified.append(res)
+
     return modified
 
 

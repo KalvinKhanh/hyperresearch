@@ -6,8 +6,7 @@ description: >
   outline, then spawns ONE hyperresearch-synthesizer subagent (Read+Write
   tool-locked) that writes the final report in TWO passes — pass 1 rough
   integrated draft, pass 2 voice/redundancy/length cleanup. Skipped for
-  light tier (which writes a single draft directly in step 10). Invoked
-  via Skill tool from the entry skill (full tier).
+  light tier (which writes a single draft directly in step 10). Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier).
 ---
 
 # Step 11 — Synthesize the final report
@@ -47,7 +46,8 @@ Read these inputs:
 
 ## Step 11.2 — Spot-check factual conflicts (orchestrator only)
 
-The synthesizer is tool-locked to `[Read, Write]` — it cannot run Bash to query the vault. So YOU resolve factual conflicts here, before spawning it.
+The synthesizer is tool-locked to `[Read, Write]` — it cannot run Bash to query the vault.
+<!-- TODO-ANTIGRAVITY: Trên Antigravity, synthesizer chỉ dùng view_file để đọc draft và write_to_file để ghi final report, không chạy lệnh terminal truy vấn ngoài. --> So YOU resolve factual conflicts here, before spawning it.
 
 For each substantive contradiction between drafts:
 1. Identify the cited source IDs on both sides
@@ -257,5 +257,6 @@ After this step, the final report is only modified by Edit hunks from the patche
 Return to the entry skill (`hyperresearch`). Invoke step 12:
 
 ```
-Skill(skill: "hyperresearch-12-critics")
+Read and follow `.agents/skills/hyperresearch-12-critics/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-12-critics")`)
 ```

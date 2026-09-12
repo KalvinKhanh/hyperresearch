@@ -6,7 +6,7 @@ description: >
   direction?" gaps, then runs a targeted fetch wave to fill them.
   Highest-leverage intervention point: corrections applied before drafting
   cost nothing; corrections applied after drafting require patches.
-  Invoked via Skill tool from the entry skill (full tier only).
+  Invoked from the entry skill (hyperresearch) by reading its SKILL.md (full tier only).
 ---
 
 # Step 8 — Pre-draft corpus critic (targeted gap-fill)
@@ -137,5 +137,6 @@ The targeted fetch wave in the next step will pull these filings BEFORE the corp
 Return to the entry skill (`hyperresearch`). Invoke step 9:
 
 ```
-Skill(skill: "hyperresearch-9-evidence-digest")
+Read and follow `.agents/skills/hyperresearch-9-evidence-digest/SKILL.md`
+(On Claude Code legacy: `Skill(skill: "hyperresearch-9-evidence-digest")`)
 ```

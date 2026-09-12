@@ -5,10 +5,11 @@ description: >
   pipeline (light / full / dissertation) that scales from a ~30-minute light-tier
   answer to an adversarially-audited report at the installed scale gear
   (<< p.time_estimate >>). This entry skill is a ROUTER.
-  It does not contain step procedures — it tells you which Skill to invoke
+  It does not contain step procedures — it tells you which step skill to execute
   for each step, in order. Each step's instructions live in its own skill
   file (`hyperresearch-1-decompose` through `hyperresearch-16-readability-audit`)
-  and are loaded fresh into context when you invoke them.
+  located in `.agents/skills/<step-name>/SKILL.md` and are loaded fresh into
+  context when you read them.
 ---
 
 # Hyperresearch V8 — multi-skill chain orchestrator
@@ -16,7 +17,7 @@ description: >
 You are the orchestrator. Your entire job in this conversation is:
 1. Read this file once at the start.
 2. Bootstrap canonical inputs (research_query, vault_tag, scaffold).
-3. Invoke each step skill in sequence via the `Skill` tool.
+3. Read and execute each step skill in sequence from `.agents/skills/hyperresearch-N-*/SKILL.md`.
 4. Between steps, do nothing except mark todos and (optionally) think to `research/runs/<vault_tag>/temp/orchestrator-notes.md`.
 
 You do NOT do the work of any step yourself. The step skills do. You just sequence them.
@@ -28,10 +29,11 @@ You do NOT do the work of any step yourself. The step skills do. You just sequen
 Each pipeline step is its own skill file. To run a step:
 
 ```
-Skill(skill: "hyperresearch-N-stepname")
+Read and follow `.agents/skills/hyperresearch-N-stepname/SKILL.md`
+(On Claude Code legacy: Skill(skill: "hyperresearch-N-stepname"))
 ```
 
-When you invoke a Skill, that skill's full procedure is loaded into your context **fresh**. You then execute that step's procedure, hit its exit criterion, and return to the entry skill (this file) to invoke the next step.
+When you read a step skill (via `view_file` or equivalent inspection), that skill's full procedure is loaded into your context **fresh**. You then execute that step's procedure, hit its exit criterion, and return to this entry skill (router) to proceed to the next step.
 
 **Why this design?** Context compaction. V7 was one 1200-line skill that got compacted away by the time Layer 4 needed its triple-draft procedure. The orchestrator forgot the procedure, wrote a single draft, and produced a flat-scoring report. V8 fixes this at the source: each step's procedure is loaded into context **only at the moment it's needed**, fresh, with no eviction risk.
 
@@ -84,7 +86,7 @@ Before you invoke any step skill, do this:
 
 0. **Auto-init if missing.** Two checks for the first-run-after-global-install case:
    - **Vault check.** If `.hyperresearch/` doesn't exist in the working directory, run `hyperresearch init . --json`. Creates the SQLite vault and `research/` directory.
-   - **Step-skills check.** If `.claude/skills/hyperresearch-1-decompose/SKILL.md` doesn't exist relative to the working directory, run `hyperresearch install --steps-only . --json`. Installs the 16 step skill files needed by `Skill(skill: "hyperresearch-N-...")` calls in later steps.
+   - **Step-skills check.** If `.agents/skills/hyperresearch-1-decompose/SKILL.md` (or `.claude/skills/hyperresearch-1-decompose/SKILL.md` on Claude Code) doesn't exist relative to the working directory, run `hyperresearch install --steps-only . --json`. Installs the 16 step skill files needed by subsequent steps.
 
    If either command fails because the binary isn't on PATH, tell the user to run `pip install hyperresearch` first. If both files already exist, both commands no-op cheaply — safe to run unconditionally.
 
@@ -137,9 +139,10 @@ Before you invoke any step skill, do this:
 
    The todo list survives context compaction; it's your durable memory of where you are in the chain.
 
-7. **Invoke step 1:** `Skill(skill: "hyperresearch-1-decompose")`.
+7. **Execute step 1:** Read and execute `.agents/skills/hyperresearch-1-decompose/SKILL.md` (via `view_file` or equivalent).
+   (On Claude Code legacy: `Skill(skill: "hyperresearch-1-decompose")`).
 
-After step 1 returns, read `research/runs/<vault_tag>/prompt-decomposition.json` to learn the tier, then continue invoking step skills per the tier routing table above. After each step's exit criterion is met, mark its todo complete and move to the next.
+After step 1 returns, read `research/runs/<vault_tag>/prompt-decomposition.json` to learn the tier, then continue executing step skills per the tier routing table above. After each step's exit criterion is met, mark its todo complete and move to the next.
 
 ---
 
@@ -162,7 +165,9 @@ Blocked fetches (login walls, bot walls, captchas) are queued, not lost: `$HPR e
 1. **CAPTCHAs / logins / 2FA are ALWAYS the human's.** The browser-fetcher marks them `needs_human`; you consolidate ALL of them into ONE message to the user at a natural pause point (never one interruption per URL). In non-interactive runs, `$HPR run block <vault_tag> --on human-challenges` and continue with everything else.
 2. **One browser-fetcher at a time.** It's the user's actual browser — parallel instances are chaos. Check the queue again after step 13 (gap-fetch) if new fetches got blocked.
 
-## Subagent spawn contract (applies to every Task call)
+## Subagent spawn contract (applies to every subagent invocation)
+
+<!-- TODO-ANTIGRAVITY: Trên Google Antigravity, việc spawn subagent được điều phối qua cơ chế subagent / background task của platform. Do Antigravity không có declarative tool-lock cứng cấm write_to_file như Claude Code, các subagent patcher và polish-auditor được áp dụng soft constraint trong prompt: chỉ đọc (view_file) và sửa cục bộ (replace_file_content), TUYỆT ĐỐI KHÔNG dùng write_to_file để viết lại toàn bộ file. -->
 
 When a step skill instructs you to spawn a subagent, the prompt you pass MUST include three pieces near the top:
 
@@ -174,7 +179,7 @@ When a step skill instructs you to spawn a subagent, the prompt you pass MUST in
 
 4. **The run's shim file, pasted VERBATIM.** Step 1 renders posture shims (register / domain notes / inference depth) to `research/runs/<vault_tag>/shims/{research,drafting,critics,polish}.md`. Each step skill's spawn template names which shim its subagents receive; append that file's FULL contents to the end of the spawn prompt, unedited. You never write, summarize, or trim shim text — the file is the single source of truth. The cite-checker receives NO shim (verification is register-independent). If the shims directory is missing, run `$HPR levers render <vault_tag> -j` before spawning.
 
-Skipping any of these in a Task prompt is a process violation.
+Skipping any of these in a subagent spawn prompt is a process violation.
 
 ---
 
@@ -182,7 +187,7 @@ Skipping any of these in a Task prompt is a process violation.
 
 Context compaction may eat parts of this conversation. If you're unsure what step you're on:
 
-0. **Read the run manifest FIRST.** `hyperresearch run resume <vault_tag> --json` (or with no tag for the newest run) returns the exact next step and the Skill invocation to continue with. This is the primary recovery path — the manifest records every step transition you logged via `hyperresearch run step`. The artifact scan below is the fallback for manifests that are missing or were not kept up to date.
+0. **Read the run manifest FIRST.** `hyperresearch run resume <vault_tag> --json` (or with no tag for the newest run) returns the exact next step and the skill file to continue with. This is the primary recovery path — the manifest records every step transition you logged via `hyperresearch run step`. The artifact scan below is the fallback for manifests that are missing or were not kept up to date.
 1. **Check the TodoWrite list.** It carries integer step numbers and survives compaction.
 2. **Check disk artifacts (fallback).** Each step writes a canonical artifact:
    - Step 1: `research/runs/<vault_tag>/scaffold.md`, `research/runs/<vault_tag>/prompt-decomposition.json`, `research/runs/<vault_tag>/temp/coverage-matrix.md`
@@ -202,7 +207,7 @@ Context compaction may eat parts of this conversation. If you're unsure what ste
    - Step 15: `research/runs/<vault_tag>/polish-log.json` (and edited final_report.md)
    - Step 16: `research/runs/<vault_tag>/readability-recommendations.json`, `research/runs/<vault_tag>/readability-decisions.json` (and edited final_report.md)
 3. **Find the highest-numbered step whose artifact exists.** Resume from the next step.
-4. **Re-invoke this entry skill** if you've lost track entirely: `Skill(skill: "hyperresearch")`. It loads fresh.
+4. **Re-invoke this entry skill** if you've lost track entirely: re-read `.agents/skills/hyperresearch/SKILL.md` (or `Skill(skill: "hyperresearch")` on Claude Code). It loads fresh.
 
 If you're ever uncertain what to do next, the answer is: re-read this file and find the next step in the tier sequence.
 
@@ -270,18 +275,17 @@ Ship only after `run finish` reports `"passed": true`: the final report lives at
 
 V7 was one 1200-line skill loaded once. By Layer 4 (line ~2200 in a 3000-line conversation), context compaction had evicted the procedure. The orchestrator silently dropped Layer 3.7 (corpus critic), rewrote its todo to replace the triple-draft ensemble with a single draft, and produced a flat-scoring report. This happened in 100% of runs where the orchestrator didn't re-read the skill file.
 
-V8 makes re-reading structural. Each step skill is loaded fresh via the `Skill` tool at the moment it's needed. The procedure is in context exactly when it matters. Compaction can evict an old step's procedure — that's fine, the orchestrator never needs it again because each step is self-contained and reads its inputs from disk.
+V8 makes re-reading structural. Each step skill is loaded fresh from `.agents/skills/hyperresearch-N-*/SKILL.md` (or via the `Skill` tool on Claude Code) at the moment it's needed. The procedure is in context exactly when it matters. Compaction can evict an old step's procedure — that's fine, the orchestrator never needs it again because each step is self-contained and reads its inputs from disk.
 
-The trade: 16 skill files instead of 1, plus 16 invocations of the `Skill` tool over the run. The cost is negligible; the reliability gain is the difference between Q57 (55.9, full pipeline) and Q9 (52.6, single-draft fallback).
+The trade: 16 step skill files instead of 1, plus 16 modular step invocations over the run. The cost is negligible; the reliability gain is the difference between Q57 (55.9, full pipeline) and Q9 (52.6, single-draft fallback).
 
 ---
 
 ## Now begin
 
-If you've read this far and the bootstrap (above) is done, invoke step 1:
+If you've read this far and the bootstrap (above) is done, execute step 1:
 
-```
-Skill(skill: "hyperresearch-1-decompose")
-```
+Read and execute `.agents/skills/hyperresearch-1-decompose/SKILL.md` (via `view_file` or equivalent).
+(On Claude Code legacy: `Skill(skill: "hyperresearch-1-decompose")`)
 
-If the bootstrap is NOT done, do the bootstrap first, then invoke step 1.
+If the bootstrap is NOT done, do the bootstrap first, then execute step 1.

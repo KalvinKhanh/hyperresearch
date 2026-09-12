@@ -30,13 +30,21 @@ def install(
         "--profile",
         help="Pipeline profile to render skill/agent prompts from (built-in gears: full, premier; plus any [profile.*] defined in .hyperresearch/config.toml). Defaults to the gear persisted by `hyperresearch profile use` (or 'full'). See `hyperresearch profile list`.",
     ),
+    harness: str = typer.Option(
+        "both",
+        "--harness",
+        help="Target agent harness: 'antigravity', 'claude', or 'both' (default: both).",
+    ),
 ) -> None:
-    """Install hyperresearch: init vault + inject CLAUDE.md + install Claude Code hooks."""
+    """Install hyperresearch: init vault + inject agent docs + install harness hooks and skills."""
     import sys
 
     from hyperresearch.core.hooks import (
+        _install_antigravity_step_skills,
         _install_hyperresearch_step_skills,
         _set_render_state,
+        install_antigravity_hooks,
+        install_global_antigravity_hooks,
         install_global_hooks,
         install_hooks,
     )
@@ -68,9 +76,7 @@ def install(
             raise typer.Exit(1)
 
     # Steps-only path: lazy install of the 16 step skills to a project's
-    # .claude/skills/. Called by the entry skill's bootstrap on first
-    # /hyperresearch in a project (after a global install). Cheap no-op
-    # on subsequent invocations.
+    # .claude/skills/ and/or .agents/skills/.
     if steps_only:
         target = Path(path).resolve()
         steps_config = target / ".hyperresearch" / "config.toml"
@@ -78,7 +84,16 @@ def install(
         steps_profile = _default_profile(steps_config_path)
         _check_profile(steps_profile, steps_config_path)
         _set_render_state(steps_profile, steps_config_path)
-        result = _install_hyperresearch_step_skills(target)
+        results = []
+        if harness in ("claude", "both"):
+            res_c = _install_hyperresearch_step_skills(target)
+            if res_c:
+                results.append(res_c)
+        if harness in ("antigravity", "both"):
+            res_a = _install_antigravity_step_skills(target)
+            if res_a:
+                results.append(res_a)
+        result = " | ".join(results) if results else None
         if json_output:
             output(
                 success({"steps_installed": result, "target": str(target)}, vault=None),
@@ -86,17 +101,13 @@ def install(
             )
             return
         if result:
-            console.print(f"[green]Step skills installed:[/] {target}/.claude/skills/")
+            console.print(f"[green]Step skills installed:[/] {target}")
             console.print(f"  {result}")
         else:
-            console.print(f"[dim]Step skills already installed at {target}/.claude/skills/[/]")
+            console.print(f"[dim]Step skills already installed at {target}[/]")
         return
 
-    # Global install path: only the user-level Claude Code entry skill +
-    # agents. No vault, no CLAUDE.md, no step skills — pure "make the
-    # slash command available everywhere" mode. Step skills install
-    # per-project, lazily, when the entry skill bootstrap calls
-    # `hyperresearch install --steps-only .` on first invocation.
+    # Global install path: user-level entry skill + agents/hooks
     if global_install:
         from hyperresearch.core.agent_docs import _resolve_executable
 
@@ -104,7 +115,11 @@ def install(
         home = Path.home()
         global_profile = profile if profile is not None else "full"
         _check_profile(global_profile, None)
-        hook_actions = install_global_hooks(home, hpr_path=hpr_path, profile=global_profile)
+        hook_actions = []
+        if harness in ("claude", "both"):
+            hook_actions.extend(install_global_hooks(home, hpr_path=hpr_path, profile=global_profile))
+        if harness in ("antigravity", "both"):
+            hook_actions.extend(install_global_antigravity_hooks(home, hpr_path=hpr_path, profile=global_profile))
 
         if json_output:
             output(
@@ -116,18 +131,14 @@ def install(
             )
             return
 
-        console.print(f"[green]Global install:[/] {home}/.claude/")
+        console.print(f"[green]Global install:[/] {home}")
         if hook_actions:
             for action in hook_actions:
                 console.print(f"  {action}")
         else:
             console.print("[dim]All skills and agents already installed.[/]")
         console.print(
-            "\n[bold]Ready.[/] /hyperresearch is now available in every Claude Code session."
-        )
-        console.print(
-            "[dim]On first /hyperresearch run in a project, the vault, research/ folder, "
-            "and the 16 step skills are created in that project's .claude/.[/]"
+            "\n[bold]Ready.[/] /hyperresearch is now available in your agent sessions."
         )
         return
 
@@ -162,16 +173,19 @@ def install(
 
     hpr_path = _resolve_executable()
 
-    # Step 3: Always re-inject CLAUDE.md (updates blurb + path)
-    doc_actions = inject_agent_docs(root)
+    # Step 3: Re-inject agent docs for the selected harness
+    doc_actions = inject_agent_docs(root, harness=harness)
 
-    # Step 4: Install Claude Code hook + skills + subagents (rendered from the
-    # gear profile — explicit --profile, else the gear persisted in config)
+    # Step 4: Install harness hooks + skills + subagents
     project_config = root / ".hyperresearch" / "config.toml"
     project_config_path = project_config if project_config.exists() else None
     project_profile = _default_profile(project_config_path)
     _check_profile(project_profile, project_config_path)
-    hook_actions = install_hooks(root, hpr_path=hpr_path, profile=project_profile)
+    hook_actions = []
+    if harness in ("claude", "both"):
+        hook_actions.extend(install_hooks(root, hpr_path=hpr_path, profile=project_profile))
+    if harness in ("antigravity", "both"):
+        hook_actions.extend(install_antigravity_hooks(root, hpr_path=hpr_path, profile=project_profile))
 
     # Step 3: Auto-configure crawl4ai if installed
     crawl4ai_status = _setup_crawl4ai(vault)
