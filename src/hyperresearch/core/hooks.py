@@ -10,7 +10,9 @@ spawned via the Task tool.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Prompt rendering — skill files and agent prompt bodies are Jinja templates
@@ -19,7 +21,7 @@ from pathlib import Path
 # the installers run; direct calls to individual _install_* helpers (tests)
 # fall back to a default full-profile context lazily.
 # ---------------------------------------------------------------------------
-_RENDER_STATE: dict | None = None
+_RENDER_STATE: dict[str, Any] | None = None
 
 
 def _set_render_state(profile_name: str, config_path: Path | None) -> None:
@@ -32,7 +34,7 @@ def _set_render_state(profile_name: str, config_path: Path | None) -> None:
     }
 
 
-def _get_render_state() -> dict:
+def _get_render_state() -> dict[str, Any]:
     if _RENDER_STATE is None:
         _set_render_state("full", None)
     assert _RENDER_STATE is not None
@@ -3632,7 +3634,7 @@ def install_hooks(
     _set_render_state(profile, config_path if config_path.exists() else None)
     actions = []
 
-    for installer in (
+    installers: list[Callable[[], str | None]] = [
         lambda: _install_claude_hook(vault_root, hpr_path),
         lambda: _install_hyperresearch_skill(vault_root),
         lambda: _install_hyperresearch_step_skills(vault_root),
@@ -3653,7 +3655,8 @@ def install_hooks(
         lambda: _install_browser_fetcher_agent(vault_root, hpr_path),
         lambda: _install_cite_checker_agent(vault_root, hpr_path),
         lambda: _prune_retired_agents(vault_root),
-    ):
+    ]
+    for installer in installers:
         result = installer()
         if result:
             actions.append(result)
@@ -3695,7 +3698,7 @@ def install_global_hooks(
     _set_render_state(profile, None)
     actions = []
 
-    for installer in (
+    installers: list[Callable[[], str | None]] = [
         lambda: _install_hyperresearch_skill(home),
         lambda: _install_researcher_agent(home, hpr_path),
         lambda: _install_loci_analyst_agent(home, hpr_path),
@@ -3715,7 +3718,8 @@ def install_global_hooks(
         lambda: _install_cite_checker_agent(home, hpr_path),
         lambda: _prune_retired_agents(home),
         lambda: _prune_global_step_skills(home),
-    ):
+    ]
+    for installer in installers:
         result = installer()
         if result:
             actions.append(result)
@@ -3773,7 +3777,7 @@ def _install_claude_hook(vault_root: Path, hpr_path: str) -> str | None:
     settings_dir.mkdir(exist_ok=True)
     settings_path = settings_dir / "settings.json"
 
-    settings = {}
+    settings: dict[str, Any] = {}
     if settings_path.exists():
         try:
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -3823,7 +3827,7 @@ def _install_antigravity_hook(vault_root: Path, hpr_path: str) -> str | None:
     agents_dir.mkdir(exist_ok=True)
     hooks_path = agents_dir / "hooks.json"
 
-    hooks_data: dict = {}
+    hooks_data: dict[str, Any] = {}
     if hooks_path.exists():
         try:
             hooks_data = json.loads(hooks_path.read_text(encoding="utf-8"))
@@ -4411,11 +4415,12 @@ def install_antigravity_hooks(
     _set_render_state(profile, config_path if config_path.exists() else None)
     actions = []
 
-    for installer in (
+    installers: list[Callable[[], str | None]] = [
         lambda: _install_antigravity_hook(vault_root, hpr_path),
         lambda: _install_antigravity_skill(vault_root),
         lambda: _install_antigravity_step_skills(vault_root),
-    ):
+    ]
+    for installer in installers:
         result = installer()
         if result:
             actions.append(result)

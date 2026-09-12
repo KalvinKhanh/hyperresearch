@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
 from hyperresearch.cli._output import console, output
 from hyperresearch.models.output import error, success
+
+if TYPE_CHECKING:
+    from hyperresearch.core.vault import Vault
 
 
 def install(
@@ -233,14 +237,14 @@ def install(
         console.print("[dim]Tip: Run 'hyperresearch setup' for interactive configuration (profile, stealth, etc.)[/]")
 
 
-def _setup_crawl4ai(vault) -> str:
+def _setup_crawl4ai(vault: Vault) -> str:
     """Detect crawl4ai, install browser if needed, set as default provider.
 
     Returns: 'configured' (already ready), 'browser_installed' (just set up),
              'not_installed' (crawl4ai not available).
     """
     try:
-        import crawl4ai  # noqa: F401
+        import crawl4ai  # type: ignore[import-untyped]  # noqa: F401
     except ImportError:
         return "not_installed"
 
@@ -257,7 +261,7 @@ def _setup_crawl4ai(vault) -> str:
         try:
             from patchright.sync_api import sync_playwright
         except ImportError:
-            from playwright.sync_api import sync_playwright
+            from playwright.sync_api import sync_playwright  # type: ignore[assignment]
 
         pw = sync_playwright().start()
         browser = pw.chromium.launch(headless=True)

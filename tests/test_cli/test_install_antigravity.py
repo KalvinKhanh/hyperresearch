@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+from typing import Any
+
+import pytest
 from typer.testing import CliRunner
 
 from hyperresearch.cli import app
@@ -10,7 +13,7 @@ from hyperresearch.cli import app
 runner = CliRunner()
 
 
-def test_install_harness_antigravity(tmp_vault, monkeypatch):
+def test_install_harness_antigravity(tmp_vault: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_vault.root)
     result = runner.invoke(
         app, ["install", str(tmp_vault.root), "--harness", "antigravity", "--json"]
@@ -44,7 +47,7 @@ def test_install_harness_antigravity(tmp_vault, monkeypatch):
     assert not (tmp_vault.root / ".claude").exists()
 
 
-def test_install_harness_claude(tmp_vault, monkeypatch):
+def test_install_harness_claude(tmp_vault: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_vault.root)
     result = runner.invoke(
         app, ["install", str(tmp_vault.root), "--harness", "claude", "--json"]
@@ -62,7 +65,7 @@ def test_install_harness_claude(tmp_vault, monkeypatch):
     assert not (tmp_vault.root / ".agents").exists()
 
 
-def test_install_steps_only_antigravity(tmp_vault, monkeypatch):
+def test_install_steps_only_antigravity(tmp_vault: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_vault.root)
     result = runner.invoke(
         app, ["install", str(tmp_vault.root), "--steps-only", "--harness", "antigravity", "--json"]
@@ -73,7 +76,7 @@ def test_install_steps_only_antigravity(tmp_vault, monkeypatch):
     assert step2.exists()
 
 
-def test_install_default_installs_both(tmp_vault, monkeypatch):
+def test_install_default_installs_both(tmp_vault: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_vault.root)
     result = runner.invoke(app, ["install", str(tmp_vault.root), "--json"])
     assert result.exit_code == 0
